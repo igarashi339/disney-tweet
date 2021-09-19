@@ -3,10 +3,12 @@
  * 直近のツイートを分析し、フォロー対象を管理するスプレッドシートを更新する。
  */
 function UpdateUserSheet() {
-  const tweetIdList = SearchRecentTweets()
-  const userIdList = SearchUserIdFromTweetIdList(tweetIdList)
-  const userInfoList = FetchUserInfoFromId(userIdList)
-  console.log(userInfoList)
+  // const tweetIdList = SearchRecentTweets()
+  // const userIdList = SearchUserIdFromTweetIdList(tweetIdList)
+  // const userInfoList = FetchUserInfoFromId(userIdList)
+  const workbookId = PropertiesService.getScriptProperties().getProperty('WORKBOOK_ID')
+  const userData = GetAllData(workbookId, 'users')
+  console.log(userData)
 }
 
 /**
