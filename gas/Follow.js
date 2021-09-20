@@ -3,85 +3,86 @@
  * 直近のツイートを分析し、フォロー対象を管理するスプレッドシートを更新する。
  */
 function UpdateUserSheet() {
-  // const tweetIdList = SearchRecentTweets()
-  // const userIdList = SearchUserIdFromTweetIdList(tweetIdList)
-  // const userInfoList = FetchUserInfoFromId(userIdList)
-  const workbookId = PropertiesService.getScriptProperties().getProperty('WORKBOOK_ID')
-  const userData = GetAllData(workbookId, 'users')
-  console.log(userData)
+  // 直近のツイートからフォロー候補を取得する
+  const targetString = "%23twitter上にいるDヲタ全員と繋がるのが密かな夢だったりするのでとりあえずこれを見たDヲタはRTもしくはフォローしていただけると全力でフォローしに行きます"
+  const numOfTweets = "100"
+  var candidateUsers = GetRecentTweetUserInfoList(targetString, numOfTweets)
+  var selectedUsers = SelectUsers(candidateUsers)
+  console.log(selectedUsers)
 }
 
 /**
- * Twitter APIをたたいてResponse結果を返す。
+ * 直近のツイートから指定された語を含むものを取得し、ツイートしたユーザ情報をリストで返す。
  */
-function GetAPI(url) {
-  const bearer = PropertiesService.getScriptProperties().getProperty('TWITTER_BEARER_TOKEN')
-  const header = {
-    "Authorization": "Bearer " + bearer
-  }
-  const options = {
-    "method": "get",
-    "headers": header
-  }
-  const response = UrlFetchApp.fetch(url, options)
-  return JSON.parse(response)
-}
-
-/**
- * 直近7日間のツイートから、指定したワードを含むものを抽出し、Tweet IDをリストにして返す。
- */
-function SearchRecentTweets() {
-  // APIをたたく
-  const numOfTweets = "10"
-  const targetString = "TDR_now OR ディズニー OR Dオタ"
-  const url = "https://api.twitter.com/2/tweets/search/recent?query=" + targetString + "&max_results=" + numOfTweets
-  const response = GetAPI(url)
-  
-  // APIの返却値を成形
-  var data = response["data"]
-  var idList = []
-  for (var i = 0; i < data.length; ++i) {
-    var tweet = data[i]
-    idList.push(tweet["id"])
-  }
-  return idList
-}
-
-/**
- * Tweet IDのリストからUser Idのリストに変換する。
- * ユーザIDに重複がある場合はここで取り除く。
- */
-function SearchUserIdFromTweetIdList(tweetIdList) {
+function GetRecentTweetUserInfoList(targetString, numOfTweets) {
+  // 直近のツイートを検索しユーザIDを取得
+  const tweetList = SearchRecentTweet(targetString, numOfTweets)
   var userIdList = []
-  for (var i = 0; i < tweetIdList.length; ++i) {
-    const url = "https://api.twitter.com/2/tweets/" + tweetIdList[i] + "?tweet.fields=author_id"
-    const response = GetAPI(url)
-    var authorId = response["data"]["author_id"]
+  for (var i = 0; i < tweetList.length; ++i) {
+    const authorId = tweetList[i]["author_id"]
     userIdList.push(authorId)
   }
-
-  // 重複を削除してかえす 
+  
+  // ユーザIDの重複を削除
   var userIdSet = new Set(userIdList)
-  return Array.from(userIdSet)
+  userIdList = Array.from(userIdSet)
+  
+  // ユーザIDからユーザ情報を取得して返す
+  var userInfoList = []
+  for (var i = 0; i < userIdList.length; ++i) {
+    const userInfo = LookupUserByID(userIdList[i])
+    userInfoList.push({
+      "id": userInfo["id"],
+      "username": userInfo["username"],
+      "name": userInfo["name"],
+      "followers_count": userInfo["public_metrics"]["followers_count"],
+      "following_count": userInfo["public_metrics"]["following_count"]
+    })
+  }
+  return userInfoList
 }
 
 /**
- * User IDからユーザ情報に変換する。
+ * 候補となるユーザにフィルタをかける。
  */
-function FetchUserInfoFromId(userIdList) {
-  var userInfoList = []
-  for (var i = 0; i < userIdList.length; ++i) {
-    // APIをたたく
-    const url = "https://api.twitter.com/2/users/" + userIdList[i] + "?user.fields=public_metrics"
-    const response = GetAPI(url)
-    const obj = {
-      "id": response["data"]["id"],
-      "username": response["data"]["username"],
-      "name": response["data"]["name"],
-      "followers_count": response["data"]["public_metrics"]["followers_count"],
-      "following_count": response["data"]["public_metrics"]["following_count"]
+function SelectUsers(candidateUsers) {
+  var filteredUsers = []
+
+  // すでにフォロー申請済のユーザの場合はスキップ
+  const ssUserData = GetAllData("users")
+  for (var i = 0; i < candidateUsers.length; ++i) {  
+    const candidateUser = candidateUsers[i]
+    if (IsContain(candidateUser["id"], ssUserData)) {
+      continue
     }
-    userInfoList.push(obj)
+    filteredUsers.push(candidateUser)
   }
-  return userInfoList
+
+  // Following/Follower比が1に近い順にソート
+  for (var i = 0; i < filteredUsers.length - 1; ++i) {
+    for (var j = i + 1; j < filteredUsers.length; ++j) {
+      var left = filteredUsers[i]
+      var right = filteredUsers[j]
+      var leftFFRatio = left["followers_count"] / left["following_count"]
+      var rightFFRatio = right["followers_count"] / right["following_count"]
+      if (Math.abs(1 - leftFFRatio) > Math.abs(1 - rightFFRatio)) {
+        var tmp = filteredUsers[i]
+        filteredUsers[i] = filteredUsers[j]
+        filteredUsers[j] = tmp
+      }
+    }
+  }
+  return filteredUsers
+}
+
+/**
+ * スプレッドシートのユーザ一覧に、当該ユーザが含まれる場合Trueを返す。
+ */
+function IsContain(targetId, ssUserData) {
+  for (var i = 0; i < ssUserData.length; ++i) {
+    if (targetId == ssUserData[i][0]) {
+      return true
+    }
+  }
+  return false
 }

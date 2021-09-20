@@ -1,6 +1,7 @@
 function Test() {
-  const tweetNum = "10"
-  console.log(SelfLikedTweets(tweetNum))
+  const keyword = "%23twitter上にいるDヲタ全員と繋がるのが密かな夢だったりするのでとりあえずこれを見たDヲタはRTもしくはフォローしていただけると全力でフォローしに行きます"
+  const maxResults = "50"
+  console.log(SearchRecentTweet(keyword, maxResults))
 }
 
 /**
@@ -21,6 +22,7 @@ function GetAPI(url) {
 
 /**
  * キーワードと件数を指定して直近のツイート情報を取得する。
+ * ただしリツイートは除く。
  * 
  * Responseの形式：
  * [ 
@@ -37,7 +39,15 @@ function GetAPI(url) {
  */
 function SearchRecentTweet(keyword, tweetNum) {
   const url = "https://api.twitter.com/2/tweets/search/recent?query=" + keyword + "&max_results=" + String(tweetNum) + "&tweet.fields=author_id,created_at,entities,geo,in_reply_to_user_id,lang,possibly_sensitive,referenced_tweets,source"
-  return GetAPI(url)["data"]
+  const rawData = GetAPI(url)["data"]
+  var retweetRemovedData = []
+  for (var i = 0; i < rawData.length; ++i) {
+    if (["referenced_tweets"] in rawData[i]) {
+      continue
+    }
+    retweetRemovedData.push(rawData[i])
+  }
+  return retweetRemovedData
 }
 
 /**
@@ -95,6 +105,24 @@ function LikedTweets(userIdStr, tweetNum) {
 function SelfLikedTweets(tweetNum) {
   const userIdStr = PropertiesService.getScriptProperties().getProperty('SELF_TWITTER_ID')
   return LikedTweets(userIdStr, tweetNum)
+}
+
+/**
+ * 該当ユーザがフォロー中のユーザを一覧で返す。
+ * maxResultsの最大値は5000.
+ */
+function GetFollowingUsers(userId, mexResults) {
+  const url = "https://api.twitter.com/2/users/" + String(userId) + "/following?max_results=" + String(mexResults) + "&user.fields=public_metrics"
+  return GetAPI(url)["data"]
+}
+
+/**
+ * 自分自身がフォローしているユーザ一覧を返す。
+ * maxResultsの最大値は5000.
+ */
+function SelfFollowingUsers(mexResults) {
+  const userIdStr = PropertiesService.getScriptProperties().getProperty('SELF_TWITTER_ID')
+  return GetFollowingUsers(userIdStr, mexResults)
 }
 
 //認証用インスタンスの生成
