@@ -58,6 +58,8 @@ function SelectUsers(candidateUsers) {
     filteredUsers.push(candidateUser)
   }
 
+  // TODO: すでにフォロワーにいる場合はスキップ
+
   // Following/Follower比が1に近い順にソート
   for (var i = 0; i < filteredUsers.length - 1; ++i) {
     for (var j = i + 1; j < filteredUsers.length; ++j) {

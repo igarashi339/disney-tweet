@@ -1,7 +1,4 @@
 function Test() {
-  const keyword = "%23twitter上にいるDヲタ全員と繋がるのが密かな夢だったりするのでとりあえずこれを見たDヲタはRTもしくはフォローしていただけると全力でフォローしに行きます"
-  const maxResults = "50"
-  console.log(SearchRecentTweet(keyword, maxResults))
 }
 
 /**
@@ -176,3 +173,53 @@ function PostMediaTweet(twText, gdFileId){
   var endPointStatus = 'https://api.twitter.com/1.1/statuses/update.json';
   service.fetch(endPointStatus, {method: 'post', payload: sendoption});
 }
+
+/**
+ * 文字だけのツイートを投稿する。
+ */
+function PostTweet(message) {
+  var endpoint = "https://api.twitter.com/1.1/statuses/update.json";
+  var service = twitter.getService()
+  var options = {
+    "method": "post",
+    "payload": {
+      status: message
+    }
+  }
+  service.fetch(endpoint, options)
+}
+
+/**
+ * ユーザ名称を指定してユーザをフォローする。
+ * ※ユーザIDではないので注意。
+ */
+function Follow(username) {
+  var service = twitter.getService()
+  var endpoint = "https://api.twitter.com/1.1/friendships/create.json"
+  var service = twitter.getService()
+  var options = {
+    "method": "post",
+    "payload": {
+      "screen_name": username
+    }
+  }
+  service.fetch(endpoint, options)
+}
+
+/**
+ * ユーザ名称を指定してユーザをアンフォローする。
+ * ※ユーザIDではないので注意。
+ */
+function UnFollow(username) {
+  var service = twitter.getService()
+  var endpoint = "https://api.twitter.com/1.1/friendships/destroy.json"
+  var service = twitter.getService()
+  var options = {
+    "method": "post",
+    "payload": {
+      "screen_name": username
+    }
+  }
+  service.fetch(endpoint, options)
+}
+
