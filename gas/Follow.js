@@ -3,12 +3,41 @@
  * 直近のツイートを分析し、フォロー対象を管理するスプレッドシートを更新する。
  */
 function UpdateUserSheet() {
+  // 夜は何もしない
+  if (IsNightTime()) {
+    return
+  }
   // 直近のツイートからフォロー候補を取得する
-  const targetString = "%23twitter上にいるDヲタ全員と繋がるのが密かな夢だったりするのでとりあえずこれを見たDヲタはRTもしくはフォローしていただけると全力でフォローしに行きます"
-  const numOfTweets = "100"
-  var candidateUsers = GetRecentTweetUserInfoList(targetString, numOfTweets)
-  var selectedUsers = SelectUsers(candidateUsers)
-  console.log(selectedUsers)
+  const targetStringList = [
+    "%23twitter上にいるDヲタ全員と繋がるのが密かな夢だったりするのでとりあえずこれを見たDヲタはRTもしくはフォローしていただけると全力でフォローしに行きます",
+    "D垢",
+    "共通年パス",
+    "ショーパレ",
+    "ドナデジ",
+    "チデクラ"
+  ]
+  var followQuota = 1 // 1回の実行でフォローする人数
+  const date = new Date()
+  const todayStr = Utilities.formatDate( date, 'Asia/Tokyo', 'yyyy-MM-dd')
+  for (let targetString of targetStringList) {
+    const numOfTweets = "50"
+    var candidateUsers = GetRecentTweetUserInfoList(targetString, numOfTweets)
+    var selectedUsers = SelectUsers(candidateUsers)
+    for (let selectedUser of selectedUsers) {
+      if (followQuota <= 0) {
+        break
+      }
+      Follow(selectedUser.username)
+      // LikePinnedTweetIfExists(selectedUser.username)
+      console.log('follow: ' + selectedUser.username)
+      AddData('users', [[selectedUser.id, selectedUser.username, todayStr]])
+      followQuota = followQuota - 1
+    }
+    if (followQuota <= 0) {
+      break
+    }
+  }
+  console.log("finish!")
 }
 
 /**
@@ -58,16 +87,14 @@ function SelectUsers(candidateUsers) {
     filteredUsers.push(candidateUser)
   }
 
-  // TODO: すでにフォロワーにいる場合はスキップ
-
-  // Following/Follower比が1に近い順にソート
+  // Follower - Following 比が小さい順にソート
   for (var i = 0; i < filteredUsers.length - 1; ++i) {
     for (var j = i + 1; j < filteredUsers.length; ++j) {
       var left = filteredUsers[i]
       var right = filteredUsers[j]
-      var leftFFRatio = left["followers_count"] / left["following_count"]
-      var rightFFRatio = right["followers_count"] / right["following_count"]
-      if (Math.abs(1 - leftFFRatio) > Math.abs(1 - rightFFRatio)) {
+      var leftFFRatio = left["followers_count"] - left["following_count"]
+      var rightFFRatio = right["followers_count"] - right["following_count"]
+      if (leftFFRatio > rightFFRatio) {
         var tmp = filteredUsers[i]
         filteredUsers[i] = filteredUsers[j]
         filteredUsers[j] = tmp
@@ -85,6 +112,18 @@ function IsContain(targetId, ssUserData) {
     if (targetId == ssUserData[i][0]) {
       return true
     }
+  }
+  return false
+}
+
+/**
+ * 夜間であればTrueを返す。
+ */
+function IsNightTime() {
+  const date = new Date()
+  const hour = Utilities.formatDate( date, 'Asia/Tokyo', 'HH')
+  if (hour < 8 || 21 < hour) {
+    return true
   }
   return false
 }

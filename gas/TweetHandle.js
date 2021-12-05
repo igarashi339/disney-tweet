@@ -1,4 +1,8 @@
 function Test() {
+  const users = SelfFollowingUsers(200)
+  for (let user of users) {
+    console.log(user.username)
+  }
 }
 
 /**
@@ -68,6 +72,32 @@ function SearchRecentTweet(keyword, tweetNum) {
  */
 function LookupUserByID(userIdStr) {
   const url = "https://api.twitter.com/2/users/" + userIdStr + "?user.fields=created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld"
+  return GetAPI(url)["data"]
+}
+
+/**
+ * ユーザ名を指定して、当該ユーザの情報を取得する。
+ * 
+ * Responseの形式：
+ * [ { verified: false,
+    description: '千葉在住のアラサーエンジニアです。',
+    created_at: '2021-09-17T15:17:27.000Z',
+    id: '1438884652119322626',
+    profile_image_url: 'https://pbs.twimg.com/profile_images/1462733139923865600/hoge.jpg',
+    public_metrics: 
+     { followers_count: 99,
+       following_count: 187,
+       tweet_count: 20,
+       listed_count: 0 },
+    pinned_tweet_id: '14627364234543097',
+    username: 'hoge',
+    entities: { description: [Object] },
+    protected: false,
+    name: 'hoge',
+    url: '' } ]
+ */
+function LookupUserByUsername(userName) {
+  const url = "https://api.twitter.com/2/users/by?usernames=" + userName + "&user.fields=created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld&expansions=pinned_tweet_id&tweet.fields=author_id,created_at"
   return GetAPI(url)["data"]
 }
 
@@ -196,7 +226,6 @@ function PostTweet(message) {
 function Follow(username) {
   var service = twitter.getService()
   var endpoint = "https://api.twitter.com/1.1/friendships/create.json"
-  var service = twitter.getService()
   var options = {
     "method": "post",
     "payload": {
@@ -213,7 +242,6 @@ function Follow(username) {
 function UnFollow(username) {
   var service = twitter.getService()
   var endpoint = "https://api.twitter.com/1.1/friendships/destroy.json"
-  var service = twitter.getService()
   var options = {
     "method": "post",
     "payload": {
@@ -221,5 +249,37 @@ function UnFollow(username) {
     }
   }
   service.fetch(endpoint, options)
+}
+
+/**
+ * ツイートIDを指定していいねする。
+ */
+function LikeTweetByTweetId(tweetId) {
+  var service = twitter.getService()
+  const endpoint = `https://api.twitter.com/1.1/favorites/create.json?id=` + tweetId
+  console.log(endpoint)
+  var options = {
+    "method": "post",
+  }
+  service.fetch(endpoint, options)
+}
+
+function GetTweetStatusbyTweetId(tweetId) {
+  const url = "https://api.twitter.com/1.1/statuses/show.json?id=" + tweetId
+  return GetAPI(url)
+}
+
+/**
+ * ユーザ名を指定し、固定ツイートがあればいいねする。
+ */
+function LikePinnedTweetIfExists(userName) {
+  const userInfo = LookupUserByUsername(userName)
+  if (`pinned_tweet_id` in userInfo[0]) {
+    try {
+      LikeTweetByTweetId(userInfo[0][`pinned_tweet_id`])
+    } catch(e) {
+      console.log(e.message)
+    }
+  }  
 }
 

@@ -26,6 +26,15 @@ function SetAllData(sheetName, dataList) {
 }
 
 /**
+ * シートの末尾に情報を追加する。
+ */
+function AddData(sheetName, dataList) {
+  const [sheet, dummy, dummy2] = GetSheetInfo(sheetName)
+  const targetRow = sheet.getLastRow() + 1
+  sheet.getRange(targetRow, 1, dataList.length, dataList[0].length).setValues(dataList)
+}
+
+/**
  * 内部関数
  * 指定されたワークブック・シートの内容を取得する。
  */
