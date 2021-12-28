@@ -7,16 +7,16 @@ function UpdateUserSheet() {
   if (IsNightTime()) {
     return
   }
+  
   // 直近のツイートからフォロー候補を取得する
   const targetStringList = [
     "%23twitter上にいるDヲタ全員と繋がるのが密かな夢だったりするのでとりあえずこれを見たDヲタはRTもしくはフォローしていただけると全力でフォローしに行きます",
-    "D垢",
-    "共通年パス",
-    "ショーパレ",
-    "ドナデジ",
-    "チデクラ"
+    "%23twitter上にいるDヲタ全員と繋がるのが密かな夢だったりするのでとりあえずこれを見たDヲタはRTもしくはフォロー",
+    "%23ディズニー好きな人と繋がりたい",
+    "%23Dオタと繋がりたい",
+    "%23Dオタさんと繋がりたい"
   ]
-  var followQuota = 1 // 1回の実行でフォローする人数
+  var followQuota = 3 // 1回の実行でフォローする人数
   const date = new Date()
   const todayStr = Utilities.formatDate( date, 'Asia/Tokyo', 'yyyy-MM-dd')
   for (let targetString of targetStringList) {
@@ -27,6 +27,7 @@ function UpdateUserSheet() {
       if (followQuota <= 0) {
         break
       }
+      sleep(10000)
       Follow(selectedUser.username)
       // LikePinnedTweetIfExists(selectedUser.username)
       console.log('follow: ' + selectedUser.username)
@@ -38,6 +39,16 @@ function UpdateUserSheet() {
     }
   }
   console.log("finish!")
+}
+
+function sleep(ms) {
+  const d1 = new Date();
+  while (true) {
+    const d2 = new Date();
+    if (d2 - d1 > ms) {
+      break;
+    }
+  }
 }
 
 /**
@@ -77,10 +88,10 @@ function GetRecentTweetUserInfoList(targetString, numOfTweets) {
 function SelectUsers(candidateUsers) {
   var filteredUsers = []
 
-  // すでにフォロー申請済のユーザの場合はスキップ
   const ssUserData = GetAllData("users")
   for (var i = 0; i < candidateUsers.length; ++i) {  
     const candidateUser = candidateUsers[i]
+    // すでにフォロー申請済の場合はスキップ
     if (IsContain(candidateUser["id"], ssUserData)) {
       continue
     }
