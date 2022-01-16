@@ -1,0 +1,19 @@
+name: like
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '*/30 * * * *'
+env:
+  BEARER_TOKEN: ${{secrets.BEARER_TOKEN}}
+  TWITTER_API_KEY: ${{secrets.TWITTER_API_KEY}}
+  TWITTER_API_SECRET: ${{secrets.TWITTER_API_SECRET}}
+  TWITTER_ACCESS_TOKEN: ${{secrets.TWITTER_ACCESS_TOKEN}}
+  TWITTER_ACCESS_TOKEN_SECRET: ${{secrets.TWITTER_ACCESS_TOKEN_SECRET}}
+jobs:
+  build:
+    name: like
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: pip3 install -r python/requirements.txt
+      - run: cd python && python3 python/main.py
