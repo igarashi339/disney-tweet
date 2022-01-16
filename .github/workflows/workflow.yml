@@ -1,8 +1,7 @@
 name: like
 on:
-  workflow_dispatch:
-  # schedule:
-  #   - cron: '*/30 * * * *'
+  schedule:
+    - cron: '0 0-12 * * *'
 env:
   BEARER_TOKEN: ${{secrets.BEARER_TOKEN}}
   TWITTER_API_KEY: ${{secrets.TWITTER_API_KEY}}
