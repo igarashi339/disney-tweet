@@ -16,4 +16,4 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: pip3 install -r python/requirements.txt
-      - run: cd python && python3 python/main.py
+      - run: cd python && python3 main.py
