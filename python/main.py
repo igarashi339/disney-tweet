@@ -8,7 +8,7 @@ load_dotenv()
 
 
 ENCODE_KEY = "encrypt"
-NUM_LIKE = 10
+NUM_LIKE = 50
 
 
 def get_client():
