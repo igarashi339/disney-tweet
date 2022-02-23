@@ -41,10 +41,32 @@ def exec_like(client: tweepy.Client, encoded_username: str):
         return
 
 
-if __name__ == "__main__":
-    client = get_client()
+def like_encrypted_name_users(client):
     encoded_username_list = get_encoded_username_list()
     filtered_encoded_username_list = random.sample(encoded_username_list, NUM_LIKE)
     for encoded_username in filtered_encoded_username_list:
         exec_like(client, encoded_username)
         time.sleep(5)
+
+
+def like_ticket_wanted_tweets(client):
+    keyward = "#ディズニーチケット求"
+    tweet_list = client.search_recent_tweets(query=keyward, max_results=10)
+    tweet_id_list = [tweet.id for tweet in tweet_list.data]
+    for tweet_id in tweet_id_list:
+        try:
+            client.like(tweet_id)
+            print(f"like tweet {tweet_id}")
+        except Exception as e:
+            print(e)
+        time.sleep(5)
+
+
+def main():
+    client = get_client()
+    # like_encrypted_name_users(client)
+    like_ticket_wanted_tweets(client)
+
+
+if __name__ == "__main__":
+    main()
